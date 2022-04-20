@@ -34,25 +34,34 @@ const PIANOKEY = [
 
 function App() {
   const [sustain, setSustain] = useState(false);
-  const AUDIOSLOADED: HTMLAudioElement[] = [];
+  const [isPower, setPower] = useState(false);
 
   const keyboardHandlerDown = (
     e: React.KeyboardEvent<HTMLButtonElement | HTMLDivElement>
   ) => {
-    PIANOKEY.map((key) => {
-      
-      if (e.key === "Shift") {
-        setSustain(e => (e == false ? true :false));
-      }
+    if (isPower === false) return null
+    e.stopPropagation();
+    if (e.shiftKey) {
+      setSustain((e) => (e === false ? true : false));
+      PIANOKEY.map((key) => {
+        const audio = document.getElementById(
+          `sounds/${key.note}`
+        ) as HTMLAudioElement;
 
+        audio.pause()
+      });
+    }
+    PIANOKEY.map((key) => {
       if (key.mapkey === e.key) {
         if (!key.playing) {
-          const audio = new Audio(`sounds/${key.note}.ogg`);
+          const audio = document.getElementById(
+            `sounds/${key.note}`
+          ) as HTMLAudioElement;
+          audio.currentTime = 0;
           audio.volume = 1;
-          document.getElementById(key.note)?.classList.toggle("active");
+          document.getElementById(key.note)?.classList.add("active");
           audio.play();
           key.playing = true;
-          AUDIOSLOADED.push(audio);
         }
       }
     });
@@ -61,43 +70,66 @@ function App() {
   const keyboardHandlerUp = (
     e: React.KeyboardEvent<HTMLButtonElement | HTMLDivElement>
   ) => {
-    e.stopPropagation()
+    if (isPower === false) return null
+    e.stopPropagation();
     PIANOKEY.map((key) => {
-      if (sustain) {
-        if (key.mapkey === e.key) {
-          document.getElementById(key.note)?.classList.remove("active");
-          key.playing = false;
-          const audio = AUDIOSLOADED.shift();
-         
+      if (key.mapkey == e.key) {
+        const audio = document.getElementById(
+          `sounds/${key.note}`
+        ) as HTMLAudioElement;
+        if (sustain) {
+          audio.pause();
         }
-      } else {
-        if (key.mapkey === e.key) {
-          document.getElementById(key.note)?.classList.remove("active");
-          key.playing = false;
-          const audio = AUDIOSLOADED.shift();
-          if (audio) {
-            audio.pause();
-          }
-        }
+        document.getElementById(key.note)?.classList.remove("active");
+        key.playing = false;
       }
     });
   };
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(e.currentTarget.value);
-    const audio = new Audio(`sounds/${e.currentTarget.value}.ogg`);
-    audio.volume = 1;
-    audio.play();
+    if (isPower === true){
+      console.log(e.currentTarget.value);
+      const audio = document.getElementById(
+        `sounds/${e.currentTarget.value}`
+      ) as HTMLAudioElement;
+      audio.volume = 1;
+      audio.play();
+    }
+   
   };
 
   return (
-    <div
+    <main
       onKeyDown={keyboardHandlerDown}
       onKeyUp={keyboardHandlerUp}
       className="piano"
     >
-      <Octave notes={notes} clickHandler={handleClick} />
-    </div>
+      
+      <button className="btn_power-on"  onClick={(e) => {e.currentTarget.classList.toggle('power-active');  setPower(e => e === false ? true : false)}}><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAU1JREFUSEvVlN1RAkEQhD8iUCNAIlAjADIwAyECzUDIQDKADMgAjACNQM0AI9Bqa+dqa539uQceuKe7utnp7umeHXDiZ3Di/vQF+AmEms81F4bG5wlwDXxmFMT/XDtrI1oAz9B5lY5I36pZ5sJSAlgDD4mpHoBKVDv3QHIAL8Aj8AXcA2+ZEd0CW2AIrICnFMQD0Fw/gG9gEjXXWS9FAtkDF8Ao8usPywOw0XiMcjE1xRtgFqvwAMRmDEwDs7g+ByClO+A1qO7OeADHILeWsHTcAtfZq5qC3tta2nKPpRJzA9wlBpfuRRl9AN4BvRdHZIa5scugZINRiql6tagw9qpviqkKTYVMU5ps0VIBaq70XPZZNGtiXthVoJEZkBpr0y3z/2ZvTWpRNCUlg4te1QDUWFeH7hgtk9KlR4y1kCJgV7lLogWgxL767/wBfgE2OEUZ4Z/YGwAAAABJRU5ErkJggg=="/> </button>
+      {PIANOKEY.map((key) => (
+        <audio
+          id={`sounds/${key.note}`}
+          preload=""
+          src={`sounds/${key.note}.ogg`}
+        ></audio>
+      ))}
+      <Octave  notes={notes} clickHandler={handleClick} >
+
+        
+      </Octave>
+
+      <div className="btn_sustain">
+        <p>
+        Pedal Sustain 
+        </p>
+        <kbd onClick={() => setSustain((e) => (e === false ? true : false))} >Click me</kbd> or <kbd>Shift</kbd>
+        {sustain === false ? (
+          <button className="active" ></button>
+        ) : (
+          <button></button>
+        )}
+      </div>
+    </main>
   );
 }
 
